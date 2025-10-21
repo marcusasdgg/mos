@@ -12,6 +12,20 @@
 .long FLAGS
 .long CHECKSUM
 
+.section .data
+# for our gdt we want 6 entries, null descriptor, kernel mode code and data, user mode code and data, task descriptor
+gdt_start:
+	.quad 0x0000000000000000
+	.quad 0x00CF9A000000FFFF
+	.quad 0x00CF92000000FFFF
+	.quad 0x00CFFA000000FFFF
+	.quad 0x00CFF2000000FFFF
+gdt_descriptor:
+	.word gdt_end - gdt_start - 1
+	.long gdt_start
+gdt_end:
+
+
 # Reserve a stack for the initial thread.
 .section .bss
 .align 16
@@ -25,6 +39,11 @@ stack_top:
 .type _start, @function
 _start:
 	movl $stack_top, %esp
+
+	lgdt gdt_descriptor
+
+	ljmp $0x08, $flush_cs
+flush_cs:
 
 	# Call the global constructors.
 	call _init
